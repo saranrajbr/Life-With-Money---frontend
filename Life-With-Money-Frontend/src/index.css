@@ -1,0 +1,140 @@
+body{
+background:#1C2541;
+  margin: 0px;
+  color: #FFFFFF;
+  font-family:Poppins;
+
+}
+
+
+
+@media (max-width: 768px) {
+
+  /* Header */
+  .header{
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .logo img{
+    width: 100px;
+    height: 100px;
+  }
+
+  .main-title{
+    font-size: 36px;
+  }
+
+  .sub-title{
+    font-size: 16px;
+  }
+
+  .buttons{
+    justify-content: center;
+    margin: 0;
+    gap: 20px;
+  }
+
+  /* Home content */
+  .content1,
+  .content2{
+    flex-direction: column;
+    gap: 40px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .text1,
+  .text2{
+    padding: 0;
+    font-size: 18px;
+  }
+
+  .content1 img,
+  .pigimage img{
+    width: 220px;
+    height: 220px;
+    margin: 0;
+  }
+
+  /* Login page */
+  .card{
+    width: 90%;
+    height: auto;
+    padding: 30px 20px;
+    gap: 50px;
+  }
+
+  .googlecard{
+    width: 90%;
+    font-size: 18px;
+  }
+
+  .inputbox{
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .inputbox label{
+    font-size: 18px;
+  }
+
+  .login-bttn{
+    width: 220px;
+    height: 55px;
+    font-size: 18px;
+  }
+
+  .or{
+    font-size: 24px;
+  }
+
+  footer .contact{
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 18px;
+  }
+}
+
+
+
+@media (min-width: 769px) and (max-width: 1024px){
+
+  .header{
+    padding: 20px 40px;
+  }
+
+  .main-title{
+    font-size: 48px;
+  }
+
+  .sub-title{
+    font-size: 20px;
+  }
+
+  .content1,
+  .content2{
+    gap: 60px;
+  }
+
+  .text1,
+  .text2{
+    font-size: 20px;
+  }
+
+  .card{
+    width: 80%;
+  }
+
+  .googlecard{
+    width: 80%;
+  }
+}
+
+
+
+*{
+  box-sizing: border-box;
+}
