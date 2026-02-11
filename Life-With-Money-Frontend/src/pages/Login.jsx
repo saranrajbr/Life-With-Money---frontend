@@ -17,7 +17,7 @@ export default function Login(){
     const handleSubmit=async (e)=>{
         e.preventDefault();
         try{
-            const response= await axios.post('https://saranrajbr.github.io/Life-With-Money/api/auth/login',{email,password});
+            const response= await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login1`,{email,password});
             localStorage.setItem('token',response.data.token);
             navigate('/Dashboard');
         }catch(error){
@@ -33,7 +33,7 @@ export default function Login(){
         const response = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/auth/google`,
             {
-                token: tokenResponse.id_token   
+                token: tokenResponse.access_token   
             }
         );
 
