@@ -1,11 +1,43 @@
 import logo from '../assets/logo.png'
 import { Link } from 'react-router-dom'
+import axios from 'axios';
+import { useGoogleLogin } from '@react-oauth/google';
 import '../App.css'
 import mail from '../assets/Group Message.png'
 import instagram from '../assets/Instagram Circle.png'
 import facebook from '../assets/Facebook.png'
 import linkedin from '../assets/LinkedIn Circled.png'
 export default function Register(){
+    const handleGoogle=async (tokenResponse)=>{
+        try{
+            console.log("Google Response:", tokenResponse);
+
+        const response = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/auth/google`,
+            {
+                token: tokenResponse.id_token   
+            }
+        );
+
+        localStorage.setItem('token', response.data.token);
+
+        navigate('/Dashboard');
+        }catch(error){
+            console.error('google login error:',error);
+            alert('google login failed. Please try again');
+        }
+    };
+
+
+    const handleGoogleError=()=>{
+        console.error('google login failed');
+        alert('google login failed.please try again');
+    };
+
+    const login=useGoogleLogin({
+        onSuccess:handleGoogle,
+        onError:handleGoogleError,
+    })
     return (
         <>
     <header>
@@ -43,7 +75,7 @@ export default function Register(){
                         </form>
                     </div>
                     <p className='or'>OR</p>
-                    <button className='googlecard'>USING GOOGLE ACCOUNT</button>
+                    <button className='googlecard' onClick={login}><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />USING GOOGLE ACCOUNT</button>
                 </div>
                 <footer>
                     <div className='contact'>

@@ -33,7 +33,7 @@ export default function Login(){
         const response = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/auth/google`,
             {
-                token: tokenResponse.id_token   // ✅ CRITICAL FIX
+                token: tokenResponse.id_token   
             }
         );
 
