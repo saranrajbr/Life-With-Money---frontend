@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png'
 import { Link } from 'react-router-dom'
 import axios from 'axios';
@@ -7,7 +9,30 @@ import mail from '../assets/Group Message.png'
 import instagram from '../assets/Instagram Circle.png'
 import facebook from '../assets/Facebook.png'
 import linkedin from '../assets/LinkedIn Circled.png'
+import { use } from 'react';
 export default function Register(){
+    const [email,setemail]=useState('');
+    const [password,setpassword]=useState('');
+    const [confirmpassword,setconfirmpassword]=useState('');
+    const navigate=useNavigate();
+
+
+    const handleSubmit=async (e) =>{
+        e.preventDefault();
+        if (password !== confirmpassword){
+            alert("passwords do not match");
+            return;
+        }
+        try{
+            const response=await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`,{email,password});
+            alert("Registration successfull");
+            navigate('/Login');
+        }catch(error){
+            console.error(error);
+            alert(error.response?.data?.msg || "Registration failed")
+        }
+    };
+
     const handleGoogle=async (tokenResponse)=>{
         try{
             console.log("Google Response:", tokenResponse);
@@ -15,7 +40,7 @@ export default function Register(){
         const response = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/auth/google`,
             {
-                token: tokenResponse.id_token   
+                token: tokenResponse.access_token   
             }
         );
 
@@ -58,20 +83,20 @@ export default function Register(){
             <div className='loginbody'>
                     <div className='card'>
                         <h2>REGISTER</h2>
-                        <form action="">
+                        <form onSubmit={handleSubmit}>
                         <div className='inputbox'>
                             <label>EMAIL :</label>
-                            <input type="email" placeholder='xxxx@gmail.com'/>
+                            <input type="email" value={email} onChange={(e)=> setemail(e.target.value)} placeholder='xxxx@gmail.com' required/>
                         </div>
                         <div className='inputbox'>
                             <label>PASSWORD :</label>
-                            <input type="password" placeholder='12345'/>
+                            <input type="password" value={password} onChange={(e)=> setpassword(e.target.value)} placeholder='12345' required/>
                         </div>
                         <div className='inputbox'>
                             <label>CONFIRM PASSWORD :</label>
-                            <input type="password" placeholder='12345' />
+                            <input type="password" value={confirmpassword} onChange={(e)=>setconfirmpassword(e.target.value)} placeholder='12345' required />
                         </div>
-                        <button className='login-bttn'>REGISTER</button>
+                        <button type='submit' className='login-bttn'>REGISTER</button>
                         </form>
                     </div>
                     <p className='or'>OR</p>

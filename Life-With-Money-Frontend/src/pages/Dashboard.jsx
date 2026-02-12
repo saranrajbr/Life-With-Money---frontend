@@ -1,4 +1,4 @@
-import React,{useState} from 'react';
+import React,{useState,useEffect} from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction';
@@ -7,12 +7,13 @@ import dashboard from '../assets/dashboard.png'
 import budgets from '../assets/budgets.png'
 import profile from '../assets/Profile.png'
 import arrow from '../assets/arrow.png'
-import { Link } from 'react-router-dom';
-
+import { Link, useNavigate } from 'react-router-dom';
+import API from '../api';
 
 
 
 export default function Dashboard() {
+  const navigate=useNavigate();
   const today=new Date().toISOString().split('T')[0];
 
   const [selecteddate,setselecteddate]=useState(today);
@@ -22,28 +23,58 @@ export default function Dashboard() {
     {name:'',amount:''}
   ]);
 
-  const handleDateClick = (info) => {
+  useEffect(() => {
+  const loadTodayExpenses = async () => {
+    const token=localStorage.getItem("token");
+    if(!token){
+      navigate("/");
+    }
+    try {
+      const res = await API.get(`/expense/${selecteddate}`);
+
+      if (res.data.expenses.length > 0) {
+        setexpenses(res.data.expenses);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  loadTodayExpenses();
+}, []);
+
+
+  const handleDateClick = async (info) => {
     const date=info.dateStr;
     setselecteddate(date);
-    if (allexpenses[date]){
-      setexpenses(allexpenses[date]);
-    }else{
+    try{
+      const res=await API.get(`/expense/${date}`);
+      if(res.data.expenses.length>0){
+        setexpenses(res.data.expenses);
+      }else{
        setexpenses([
         { name: '', amount: '' },
         { name: '', amount: '' }
        ]
        );
     }
+  }catch(err){
+    console.error(err);
+  }
   };
 
-  const [allexpenses,setallexpenses]=useState({});
 
-  const saveexpenses = () => {
-    setallexpenses({
-      ...allexpenses,
-      [selecteddate]: expenses
-    });
-    alert('Expenses saved for ' + selecteddate);
+  const saveexpenses =async () => {
+    try{
+      await API.post("/expense",{
+        date:selecteddate,
+        expenses:expenses,
+      });
+      alert("expenses saved");
+    }catch(err){
+      console.error(err);
+      alert("failed to save");
+    }
   };
 
   const updateexpense=(index,feild,value)=>{
@@ -64,6 +95,11 @@ const totalamount=expenses.reduce((sum,item)=>{
 const removeexpense =()=>{
   if(expenses.length<=1) return;
   setexpenses(expenses.slice(0,-1));
+}
+
+const handleLogout=()=>{
+  localStorage.removeItem("token");
+  navigate("/");
 }
   return (
     <div className="dashboard-container">
@@ -86,10 +122,10 @@ const removeexpense =()=>{
             <p>Profiles</p>
           </div>
         </div>
-        <Link to="/"><button className='log-out'>
+        <button className='log-out' onClick={handleLogout}>
           Logout
           <img src={arrow} alt="arrow symbol" />
-        </button></Link>
+        </button>
         
       </div>
       <div className='calender-container'>

@@ -17,7 +17,7 @@ export default function Login(){
     const handleSubmit=async (e)=>{
         e.preventDefault();
         try{
-            const response= await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login1`,{email,password});
+            const response= await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`,{email,password});
             localStorage.setItem('token',response.data.token);
             navigate('/Dashboard');
         }catch(error){
