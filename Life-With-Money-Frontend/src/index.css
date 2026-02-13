@@ -1,8 +1,8 @@
-body{
-background:#1C2541;
+body {
+  background: #1C2541;
   margin: 0px;
   color: #FFFFFF;
-  font-family:Poppins;
+  font-family: Poppins;
 
 }
 
@@ -11,27 +11,27 @@ background:#1C2541;
 @media (max-width: 768px) {
 
   /* Header */
-  .header{
+  .header {
     flex-direction: column;
     gap: 20px;
     padding: 20px;
     text-align: center;
   }
 
-  .logo img{
+  .logo img {
     width: 100px;
     height: 100px;
   }
 
-  .main-title{
+  .main-title {
     font-size: 36px;
   }
 
-  .sub-title{
+  .sub-title {
     font-size: 16px;
   }
 
-  .buttons{
+  .buttons {
     justify-content: center;
     margin: 0;
     gap: 20px;
@@ -39,7 +39,7 @@ background:#1C2541;
 
   /* Home content */
   .content1,
-  .content2{
+  .content2 {
     flex-direction: column;
     gap: 40px;
     padding: 20px;
@@ -47,51 +47,51 @@ background:#1C2541;
   }
 
   .text1,
-  .text2{
+  .text2 {
     padding: 0;
     font-size: 18px;
   }
 
   .content1 img,
-  .pigimage img{
+  .pigimage img {
     width: 220px;
     height: 220px;
     margin: 0;
   }
 
   /* Login page */
-  .card{
+  .card {
     width: 90%;
     height: auto;
     padding: 30px 20px;
     gap: 50px;
   }
 
-  .googlecard{
+  .googlecard {
     width: 90%;
     font-size: 18px;
   }
 
-  .inputbox{
+  .inputbox {
     flex-direction: column;
     align-items: center;
   }
 
-  .inputbox label{
+  .inputbox label {
     font-size: 18px;
   }
 
-  .login-bttn{
+  .login-bttn {
     width: 220px;
     height: 55px;
     font-size: 18px;
   }
 
-  .or{
+  .or {
     font-size: 24px;
   }
 
-  footer .contact{
+  footer .contact {
     flex-wrap: wrap;
     gap: 15px;
     font-size: 18px;
@@ -100,41 +100,224 @@ background:#1C2541;
 
 
 
-@media (min-width: 769px) and (max-width: 1024px){
+@media (min-width: 769px) and (max-width: 1024px) {
 
-  .header{
+  .header {
     padding: 20px 40px;
   }
 
-  .main-title{
+  .main-title {
     font-size: 48px;
   }
 
-  .sub-title{
+  .sub-title {
     font-size: 20px;
   }
 
   .content1,
-  .content2{
+  .content2 {
     gap: 60px;
   }
 
   .text1,
-  .text2{
+  .text2 {
     font-size: 20px;
   }
 
-  .card{
+  .card {
     width: 80%;
   }
 
-  .googlecard{
+  .googlecard {
     width: 80%;
   }
 }
 
 
 
-*{
-  box-sizing: border-box;
+
+/* Responsive Design Updates */
+@media screen and (max-width: 768px) {
+
+  /* Global Overrides */
+  body .dashboard-container {
+    flex-direction: column;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  body .side-navigation {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  body .side-heading {
+    gap: 10px;
+  }
+
+  body .side-heading h1 {
+    display: none;
+    /* Hide title on mobile to save space */
+  }
+
+  body .side-heading img {
+    margin: 0;
+    width: 40px;
+    height: 40px;
+  }
+
+  body .side-options {
+    flex-direction: row;
+    margin-left: 0;
+    gap: 10px;
+  }
+
+  /* Compacting Sidebar Items */
+  body .dashboard,
+  body .budgets,
+  body .profiles {
+    width: auto;
+    margin-left: 0;
+    padding: 10px;
+    justify-content: center;
+    border-radius: 50%;
+    /* Make them button-like */
+  }
+
+  body .dashboard p,
+  body .budgets p,
+  body .profiles p {
+    display: none;
+    /* Hide text labels on mobile */
+  }
+
+  body .dashboard img,
+  body .budgets img,
+  body .profiles img {
+    margin: 0;
+  }
+
+  body .log-out {
+    display: none;
+    /* Hide logout or move to profile menu later, for now hide to fit nav */
+  }
+
+  /* Main Content Adjustments */
+  body .calender-container,
+  body .main-content {
+    width: 100% !important;
+    /* Override fixed widths */
+    height: auto;
+    padding: 20px;
+    margin-top: 0;
+  }
+
+  body .calender {
+    width: 100%;
+  }
+
+  body .fc {
+    width: 100% !important;
+    height: auto;
+  }
+
+  body .log-savings,
+  body .salary-card,
+  body .summary-card,
+  body .insights-card,
+  body .transactions-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Financial Overview Specifics */
+  body .financial-container {
+    flex-direction: column;
+    padding: 0;
+    gap: 20px;
+  }
+
+  body .financial-left-col,
+  body .financial-right-col {
+    width: 100%;
+  }
+
+  body .summary-cards-row {
+    flex-direction: column;
+  }
+
+  body .budget-list {
+    width: 100%;
+  }
+
+  /* Salary Input */
+  body .salary-main-input {
+    font-size: 14px;
+  }
+
+  /* Login/Register Pages */
+  body .card,
+  body .googlecard {
+    width: 90% !important;
+  }
+
+  body .buttons {
+    display: none;
+    /* Hide top buttons on mobile login/home mainly */
+  }
+
+  body .header {
+    padding: 20px;
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+/* Tablet / Small Laptop Adjustments */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  body .side-navigation {
+    width: 80px;
+    /* Collapsed Sidebar */
+    align-items: center;
+  }
+
+  body .side-heading h1,
+  body .dashboard p,
+  body .budgets p,
+  body .profiles p,
+  body .log-out {
+    display: none;
+    /* Hide text */
+  }
+
+  body .side-options {
+    margin-left: 0;
+    align-items: center;
+  }
+
+  body .dashboard,
+  body .budgets,
+  body .profiles {
+    width: 60px;
+    justify-content: center;
+    margin-left: 0;
+    padding: 10px 0;
+  }
+
+  body .main-content,
+  body .calender-container {
+    width: calc(100% - 80px) !important;
+  }
+
+  body .financial-container {
+    flex-direction: column;
+  }
 }
