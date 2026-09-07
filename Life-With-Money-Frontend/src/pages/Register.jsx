@@ -1,117 +1,126 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import logo from '../assets/logo.png'
-import { Link } from 'react-router-dom'
-import axios from 'axios';
-import { useGoogleLogin } from '@react-oauth/google';
-import '../App.css'
-import mail from '../assets/Group Message.png'
-import instagram from '../assets/Instagram Circle.png'
-import facebook from '../assets/Facebook.png'
-import linkedin from '../assets/LinkedIn Circled.png'
-import { use } from 'react';
-export default function Register(){
-    const [email,setemail]=useState('');
-    const [password,setpassword]=useState('');
-    const [confirmpassword,setconfirmpassword]=useState('');
-    const navigate=useNavigate();
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import API from "../api";
+import AuthLayout from "../components/AuthLayout";
+import Button from "../components/Button";
+import Spinner from "../components/Spinner";
+import { useToast } from "../components/toastContext";
 
+export default function Register() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const toast = useToast();
 
-    const handleSubmit=async (e) =>{
-        e.preventDefault();
-        if (password !== confirmpassword){
-            alert("passwords do not match");
-            return;
-        }
-        try{
-            const response=await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`,{email,password});
-            alert("Registration successfull");
-            navigate('/Login');
-        }catch(error){
-            console.error(error);
-            alert(error.response?.data?.msg || "Registration failed")
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password !== confirm) {
+      toast("Passwords do not match.", "error");
+      return;
+    }
+    if (password.length < 6) {
+      toast("Password must be at least 6 characters.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      await API.post("/auth/register", { email, password });
+      toast("Registration successful — please sign in.");
+      navigate("/Login");
+    } catch (err) {
+      toast(err?.response?.data?.msg || "Registration failed.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleGoogle=async (tokenResponse)=>{
-        try{
-            console.log("Google Response:", tokenResponse);
+  const onGoogleSuccess = async (response) => {
+    try {
+      const { data } = await API.post("/auth/google", { token: response.credential });
+      localStorage.setItem("token", data.token);
+      toast("Account created with Google!");
+      navigate("/Dashboard");
+    } catch (err) {
+      toast(err?.response?.data?.msg || "Google sign-up failed. Please try again.", "error");
+    }
+  };
 
-        const response = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/auth/google`,
-            {
-                token: tokenResponse.access_token   
-            }
-        );
+  const onGoogleError = () => {
+    toast("Google sign-up was cancelled or failed.", "error");
+  };
 
-        localStorage.setItem('token', response.data.token);
+  return (
+    <AuthLayout
+      title="Create account"
+      subtitle="Start tracking your finances in minutes"
+      footer={
+        <p className="auth-switch">
+          Already have an account? <Link to="/Login">Sign in</Link>
+        </p>
+      }
+    >
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
 
-        navigate('/Dashboard');
-        }catch(error){
-            console.error('google login error:',error);
-            alert('google login failed. Please try again');
-        }
-    };
+        <div className="field">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="At least 6 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="new-password"
+          />
+        </div>
 
+        <div className="field">
+          <label htmlFor="confirm">Confirm password</label>
+          <input
+            id="confirm"
+            type="password"
+            placeholder="Repeat your password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            required
+            autoComplete="new-password"
+          />
+        </div>
 
-    const handleGoogleError=()=>{
-        console.error('google login failed');
-        alert('google login failed.please try again');
-    };
+        <Button type="submit" className="auth-submit" disabled={loading}>
+          {loading ? <Spinner /> : "Create Account"}
+        </Button>
+      </form>
 
-    const login=useGoogleLogin({
-        onSuccess:handleGoogle,
-        onError:handleGoogleError,
-    })
-    return (
-        <>
-    <header>
-                <div className='header'>
-                    <div className='logo'>
-                        <img src={logo} alt="logo" />
-                    </div>
-                    <div className='title'>
-                        <h1 className='main-title'>Life With Money</h1>
-                        <h2 className='sub-title'>Track daily expenses. Build better financial habits.</h2>
-                    </div>
-                    <div className='buttons'>
-                        <Link to="/"><button className='login-button'>Home</button></Link>
-                        <Link to="/Login"><button className='Register-button'>Login</button></Link>
-                    </div>
-                </div>
-            </header>
-            <div className='loginbody'>
-                    <div className='card'>
-                        <h2>REGISTER</h2>
-                        <form onSubmit={handleSubmit}>
-                        <div className='inputbox'>
-                            <label>EMAIL :</label>
-                            <input type="email" value={email} onChange={(e)=> setemail(e.target.value)} placeholder='xxxx@gmail.com' required/>
-                        </div>
-                        <div className='inputbox'>
-                            <label>PASSWORD :</label>
-                            <input type="password" value={password} onChange={(e)=> setpassword(e.target.value)} placeholder='12345' required/>
-                        </div>
-                        <div className='inputbox'>
-                            <label>CONFIRM PASSWORD :</label>
-                            <input type="password" value={confirmpassword} onChange={(e)=>setconfirmpassword(e.target.value)} placeholder='12345' required />
-                        </div>
-                        <button type='submit' className='login-bttn'>REGISTER</button>
-                        </form>
-                    </div>
-                    <p className='or'>OR</p>
-                    <button className='googlecard' onClick={login}><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />USING GOOGLE ACCOUNT</button>
-                </div>
-                <footer>
-                    <div className='contact'>
-                        <p>contact</p>
-                        <a href="mailto:saranrajbr@gmail.com" target="_blank" rel="noopener noreferrer"><img src={mail} alt="mail" className="mail" /></a>
-                        <a href="https://www.instagram.com/saranrajbr?igsh=MWlyZGUxY3J6NHJldg==" target="_blank" rel="noopener noreferrer"><img src={instagram} alt="instagram" className="instagram"/></a>
-                        <a href="https://www.facebook.com/share/18HBNTqcH3/" target="_blank" rel="noopener noreferrer"><img src={facebook} alt="facebook" className="facebook"/></a>
-                        <a href="https://www.linkedin.com/in/saran-raj-b-r-04913932b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener noreferrer"><img src={linkedin} alt="linkedin" className="linkedin" /></a>
-                                                
-                    </div>
-                </footer> 
-            </>
-    );
+      <div className="auth-divider">
+        <span>or</span>
+      </div>
+
+      <div className="google-btn-wrap">
+        <GoogleLogin
+          onSuccess={onGoogleSuccess}
+          onError={onGoogleError}
+          useOneTap={false}
+          text="signup_with"
+          shape="pill"
+          theme="filled_blue"
+        />
+      </div>
+    </AuthLayout>
+  );
 }

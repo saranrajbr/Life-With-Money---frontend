@@ -1,112 +1,162 @@
-import React, { useState, useEffect } from 'react';
-import logo from '../assets/logo.png'
-import dashboard from '../assets/dashboard.png'
-import budgetsImg from '../assets/budgets.png'
-import profileImg from '../assets/Profile.png'
-import arrow from '../assets/arrow.png'
-import { Link, useNavigate } from 'react-router-dom';
-import API from '../api';
+import { useState, useEffect } from "react";
+import AppLayout from "../components/AppLayout";
+import Spinner from "../components/Spinner";
+import Button from "../components/Button";
+import { useToast } from "../components/toastContext";
+import API from "../api";
 
 export default function Profile() {
-    const navigate = useNavigate();
-    const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const toast = useToast();
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                navigate("/");
-                return;
-            }
-            try {
-                const res = await API.get('/auth/me', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setUser(res.data);
-            } catch (err) {
-                console.error("Failed to fetch user", err);
-            }
-        };
-        fetchUser();
-    }, []);
+  // Password forms
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/");
+  useEffect(() => {
+    API.get("/auth/me")
+      .then((res) => setUser(res.data))
+      .catch(() => toast("Could not load profile.", "error"))
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const resetFields = () => {
+    setOldPassword("");
+    setNewPassword("");
+    setConfirm("");
+  };
+
+  const submitPassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirm) {
+      toast("Passwords do not match.", "error");
+      return;
     }
+    if (newPassword.length < 6) {
+      toast("Password must be at least 6 characters.", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const url = user.hasPassword ? "/auth/change-password" : "/auth/set-password";
+      const body = user.hasPassword ? { oldPassword, newPassword } : { password: newPassword };
+      const { data } = await API.put(url, body);
+      toast(data.msg || "Password updated.");
+      resetFields();
+      setUser((u) => ({ ...u, hasPassword: true }));
+    } catch (err) {
+      toast(err?.response?.data?.msg || "Could not update password.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
 
-    return (
-        <div className="dashboard-container">
-            {/* Sidebar - Duplicated from Dashboard */}
-            <div className='side-navigation'>
-                <div className='side-heading'>
-                    <img src={logo} alt="logo" />
-                    <h1>Life With Money</h1>
+  return (
+    <AppLayout>
+      <div className="page">
+        <header className="page-head">
+          <div>
+            <h1>Profile</h1>
+            <p className="page-head-sub">Your account details.</p>
+          </div>
+        </header>
+
+        <section className="card profile-card">
+          {loading ? (
+            <div className="list-loading"><Spinner /> Loading…</div>
+          ) : user ? (
+            <div className="profile-wrap">
+              <div className="profile-avatar">
+                {user.email ? user.email[0].toUpperCase() : "U"}
+              </div>
+              <div className="profile-fields">
+                <div className="pf-field">
+                  <label>Email</label>
+                  <div className="pf-value">{user.email}</div>
                 </div>
-                <div className='side-options'>
-                    <Link to="/Dashboard" className='dashboard nav-link'>
-                        <img src={dashboard} alt="dashboard logo" />
-                        <p>Dashboard</p>
-                    </Link>
-                    <Link to="/Budgets" className='budgets nav-link'>
-                        <img src={budgetsImg} alt="budgets logo" />
-                        <p>Budgets</p>
-                    </Link>
-                    <div className='profiles nav-item-active'>
-                        <img src={profileImg} alt="profile logo" />
-                        <p>Profiles</p>
-                    </div>
+                <div className="pf-field">
+                  <label>Sign-in method</label>
+                  <div className="pf-value">
+                    {user.googleid ? "Google Account" : "Email & Password"}
+                  </div>
                 </div>
-                <button className='log-out' onClick={handleLogout}>
-                    Logout
-                    <img src={arrow} alt="arrow symbol" />
-                </button>
+                <div className="pf-field">
+                  <label>Account status</label>
+                  <div className="pf-value"><span className="status-ok">● Active</span></div>
+                </div>
+                {user.salary ? (
+                  <div className="pf-field">
+                    <label>Monthly salary</label>
+                    <div className="pf-value">{user.salary.toLocaleString()}</div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <p className="empty-note">No profile data.</p>
+          )}
+        </section>
+
+        {user && (
+          <section className="card profile-card">
+            <div className="card-head">
+              <h2>{user.hasPassword ? "Change password" : "Set a password"}</h2>
+              <span className="card-head-sub">
+                {user.hasPassword
+                  ? "Update your sign-in password"
+                  : "Your Google account has no password yet. Set one to also sign in with email & password."}
+              </span>
             </div>
 
-            {/* Main Content */}
-            <div className='calender-container main-content'>
-                <div className='calender-title'>
-                    <h1>User Profile</h1>
-                    <h2>Your Account Details</h2>
+            <form className="auth-form pf-password-form" onSubmit={submitPassword}>
+              {user.hasPassword && (
+                <div className="field">
+                  <label htmlFor="old-password">Current password</label>
+                  <input
+                    id="old-password"
+                    type="password"
+                    placeholder="Enter current password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                    autoComplete="current-password"
+                  />
                 </div>
-
-                <div className='log-savings profile-card'>
-                    {user ? (
-                        <div className='profile-details'>
-                            <div className='avatar-container'>
-                                <div className='avatar'>
-                                    {user.email ? user.email[0].toUpperCase() : 'U'}
-                                </div>
-                            </div>
-
-                            <div className='inputbox vertical'>
-                                <label>Email Address</label>
-                                <div className='profile-value'>
-                                    {user.email}
-                                </div>
-                            </div>
-
-                            <div className='inputbox vertical'>
-                                <label>User ID</label>
-                                <div className='profile-value profile-value-dimmed'>
-                                    {user._id}
-                                </div>
-                            </div>
-
-                            {/* Placeholder for future fields */}
-                            <div className='inputbox vertical'>
-                                <label>Account Status</label>
-                                <div className='profile-value'>
-                                    Active
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <p>Loading profile...</p>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
+              )}
+              <div className="field">
+                <label htmlFor="new-password">New password</label>
+                <input
+                  id="new-password"
+                  type="password"
+                  placeholder="At least 6 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="confirm-password">Confirm new password</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="Repeat your password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button type="submit" disabled={busy}>
+                {busy ? <Spinner /> : user.hasPassword ? "Change password" : "Set password"}
+              </Button>
+            </form>
+          </section>
+        )}
+      </div>
+    </AppLayout>
+  );
 }
-

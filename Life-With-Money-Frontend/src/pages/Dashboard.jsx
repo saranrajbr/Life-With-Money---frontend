@@ -1,192 +1,268 @@
-import React, { useState, useEffect } from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid'
-import interactionPlugin from '@fullcalendar/interaction';
-import logo from '../assets/logo.png'
-import dashboard from '../assets/dashboard.png'
-import budgets from '../assets/budgets.png'
-import profile from '../assets/Profile.png'
-import arrow from '../assets/arrow.png'
-import { Link, useNavigate } from 'react-router-dom';
-import API from '../api';
+import { useState, useEffect } from "react";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import AppLayout from "../components/AppLayout";
+import Button from "../components/Button";
+import Spinner from "../components/Spinner";
+import { useToast } from "../components/toastContext";
+import API from "../api";
+import { useCategories, formatMoney, todayStr, groupTransactionsByDate } from "../utils";
 
-
+const EMPTY_FORM = { type: "expense", category: "", amount: "", description: "" };
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const today = new Date().toISOString().split('T')[0];
+  const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [transactions, setTransactions] = useState([]);
+  const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, net: 0 });
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { categories, loading: catLoading, labelFor } = useCategories();
+  const toast = useToast();
 
-  const [selecteddate, setselecteddate] = useState(today);
-
-  const [expenses, setexpenses] = useState([
-    { name: '', amount: '' },
-    { name: '', amount: '' }
-  ]);
+  const loadDay = async (dateStr) => {
+    setLoading(true);
+    try {
+      const { data } = await API.get(`/transactions?range=day&dateStr=${dateStr}`);
+      setTransactions(data.transactions);
+      setSummary(data.summary);
+      setSelectedDate(dateStr);
+    } catch {
+      toast("Could not load transactions.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadTodayExpenses = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/");
-      }
-      try {
-        const res = await API.get(`/expense/${selecteddate}`);
-
-        if (res.data.expenses.length > 0) {
-          setexpenses(res.data.expenses);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    loadTodayExpenses();
+    loadDay(todayStr());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-  const handleDateClick = async (info) => {
-    const date = info.dateStr;
-    setselecteddate(date);
-    try {
-      const res = await API.get(`/expense/${date}`);
-      if (res.data.expenses.length > 0) {
-        setexpenses(res.data.expenses);
-      } else {
-        setexpenses([
-          { name: '', amount: '' },
-          { name: '', amount: '' }
-        ]
-        );
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleDateClick = (info) => {
+    loadDay(info.dateStr);
   };
 
-
-  const saveexpenses = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.category || !form.amount) {
+      toast("Select a category and enter an amount.", "error");
+      return;
+    }
+    setSaving(true);
     try {
-      await API.post("/expense", {
-        date: selecteddate,
-        expenses: expenses,
+      await API.post("/transactions", {
+        type: form.type,
+        category: form.category,
+        amount: form.amount,
+        description: form.description,
+        dateStr: selectedDate
       });
-      alert("expenses saved");
+      toast(form.type === "income" ? "Income added" : "Expense added");
+      setForm(EMPTY_FORM);
+      loadDay(selectedDate);
     } catch (err) {
-      console.error(err);
-      alert("failed to save");
+      toast(err?.response?.data?.msg || "Failed to save.", "error");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const updateexpense = (index, feild, value) => {
-    const update = [...expenses];
-    update[index][feild] = value;
-    setexpenses(update);
+  const removeTransaction = async (id) => {
+    try {
+      await API.delete(`/transactions/${id}`);
+      toast("Transaction deleted", "info");
+      loadDay(selectedDate);
+    } catch {
+      toast("Failed to delete.", "error");
+    }
   };
 
-  const addexpense = () => {
-    setexpenses([...expenses, { name: '', amount: '' }]);
-  };
+  const categoryList = form.type === "expense" ? categories.expense : categories.income;
 
-  const totalamount = expenses.reduce((sum, item) => {
-    const amount = parseFloat(item.amount);
-    return sum + (isNaN(amount) ? 0 : amount);
-  }, 0);
+  const grouped = groupTransactionsByDate(transactions);
 
-  const removeexpense = () => {
-    if (expenses.length <= 1) return;
-    setexpenses(expenses.slice(0, -1));
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/");
-  }
   return (
-    <div className="dashboard-container">
-      <div className='side-navigation'>
-        <div className='side-heading'>
-          <img src={logo} alt="logo" />
-          <h1>Life With Money</h1>
-        </div>
-        <div className='side-options'>
-          <div className='dashboard nav-item-active'>
-            <img src={dashboard} alt="dashboard logo" />
-            <p>Dashboard</p>
+    <AppLayout>
+      <div className="page">
+        <header className="page-head">
+          <div>
+            <h1>Dashboard</h1>
+            <p className="page-head-sub">Log and review your daily transactions.</p>
           </div>
-          <Link to="/Budgets" className='budgets nav-link'>
-            <img src={budgets} alt="budgets logo" />
-            <p>Budgets</p>
-          </Link>
-          <Link to="/Profiles" className='profiles nav-link'>
-            <img src={profile} alt="profile logo" />
-            <p>Profiles</p>
-          </Link>
-        </div>
-        <button className='log-out' onClick={handleLogout}>
-          Logout
-          <img src={arrow} alt="arrow symbol" />
-        </button>
+          <div className="date-badge">{selectedDate}</div>
+        </header>
 
-      </div>
-      <div className='calender-container'>
-        <div className='calender-title'>
-          <h1>Financial Calendar</h1>
-          <h2>Track daily expenses</h2>
-        </div>
-        <div className='calender'>
-          <FullCalendar
-            plugins={[dayGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            dateClick={handleDateClick}
-            dayCellClassNames={(arg) => arg.dateStr === selecteddate ? ['selected-day'] : []}
-          />
-
-        </div>
-        <div className='calender-descrition'>
-          <p>Track Your Money. Control Your Life.</p>
-        </div>
-      </div>
-      <div className='log-savings'>
-        <div className='log-title'>
-          <h1>Expense Entry</h1>
-          <p>Date: <strong>{selecteddate}</strong></p>
-        </div>
-        <div className='log-entry'>
-          {expenses.map((item, index) => (
-            <div key={index}>
-              <input
-                type="text"
-                placeholder="Category name"
-                value={item.name}
-                onChange={(e) =>
-                  updateexpense(index, 'name', e.target.value)
-                }
-                className='category'
-              />
-
-              <input
-                type="number"
-                placeholder="Amount"
-                value={item.amount}
-                onChange={(e) =>
-                  updateexpense(index, 'amount', e.target.value)
-                }
-                className='amount'
-              />
+        <div className="dash-grid">
+          {/* Calendar */}
+          <section className="card calendar-card">
+            <div className="card-head">
+              <h2>Financial Calendar</h2>
+              <span className="card-head-sub">Tap a day to log entries</span>
             </div>
-          ))}
+            <FullCalendar
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              dateClick={handleDateClick}
+              dayCellClassNames={(arg) =>
+                arg.dateStr === selectedDate ? ["selected-day"] : []
+              }
+            />
+          </section>
+
+          {/* Entry form */}
+          <section className="card entry-card">
+            <div className="card-head">
+              <h2>Add Transaction</h2>
+              <span className="card-head-sub">{selectedDate}</span>
+            </div>
+
+            <div className="type-seg">
+              <button
+                type="button"
+                className={form.type === "expense" ? "active expense-on" : ""}
+                onClick={() => setForm({ ...EMPTY_FORM, type: "expense" })}
+              >
+                Expense
+              </button>
+              <button
+                type="button"
+                className={form.type === "income" ? "active income-on" : ""}
+                onClick={() => setForm({ ...EMPTY_FORM, type: "income" })}
+              >
+                Income
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="tx-form">
+              <div className="field">
+                <label htmlFor="category">Category</label>
+                {catLoading ? (
+                  <div className="field-loading"><Spinner size={14} /> Loading categories…</div>
+                ) : (
+                  <select
+                    id="category"
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {categoryList.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="field">
+                <label htmlFor="amount">Amount</label>
+                <div className="amount-input">
+                  <span className="amount-currency">₹</span>
+                  <input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={form.amount}
+                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="field">
+                <label htmlFor="description">Note (optional)</label>
+                <input
+                  id="description"
+                  type="text"
+                  placeholder="e.g. weekly groceries"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" disabled={saving} className="btn-block">
+                {saving ? <Spinner /> : `Add ${form.type === "income" ? "Income" : "Expense"}`}
+              </Button>
+            </form>
+          </section>
+
+          {/* Day summary */}
+          <section className="card totals-card">
+            <div className="card-head">
+              <h2>Today's Totals</h2>
+            </div>
+            <div className="totals-grid">
+              <div className="total-box">
+                <span className="total-label">Income</span>
+                <span className="total-value inc">{formatMoney(summary.totalIncome)}</span>
+              </div>
+              <div className="total-box">
+                <span className="total-label">Spent</span>
+                <span className="total-value exp">{formatMoney(summary.totalExpense)}</span>
+              </div>
+              <div className="total-box">
+                <span className="total-label">Net</span>
+                <span className={`total-value ${summary.net >= 0 ? "inc" : "exp"}`}>
+                  {formatMoney(summary.net)}
+                </span>
+              </div>
+            </div>
+          </section>
         </div>
-        <div>
-          <h3>Total :<b> {totalamount}</b></h3>
-        </div>
-        <div className='save-add-button'>
-          <button onClick={addexpense}>+ Add Category</button>
-          <button onClick={removeexpense}>- Remove Category</button>
-        </div>
-        <div className='save-btn'>
-          <button onClick={saveexpenses}>Save Expenses</button>
-        </div>
+
+        {/* Transactions list */}
+        <section className="card txn-card">
+          <div className="card-head">
+            <h2>Transactions</h2>
+            <span className="card-head-sub">for {selectedDate}</span>
+          </div>
+
+          {loading ? (
+            <div className="list-loading"><Spinner /> Loading…</div>
+          ) : grouped.length === 0 ? (
+            <p className="empty-note">No transactions yet for this day.</p>
+          ) : (
+            <div className="txn-list">
+              {grouped.map(([date, items]) => (
+                <div key={date} className="txn-group">
+                  <div className="txn-group-head">{date}</div>
+                  {items.map((tx) => (
+                    <div className="txn-row" key={tx._id}>
+                      <div className="txn-row-main">
+                        <span className={`txn-icon ${tx.type}`}>
+                          {tx.type === "income" ? "＋" : "－"}
+                        </span>
+                        <div className="txn-meta">
+                          <span className="txn-name">{labelFor(tx.type, tx.category)}</span>
+                          <span className="txn-sub">
+                            {tx.type} {tx.description ? ` · ${tx.description}` : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <span className={`txn-amount ${tx.type}`}>
+                        {tx.type === "income" ? "+" : "-"}
+                        {formatMoney(tx.amount).slice(1)}
+                      </span>
+                      <button
+                        className="icon-btn"
+                        onClick={() => removeTransaction(tx._id)}
+                        aria-label="Delete transaction"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
-    </div>
+    </AppLayout>
   );
 }
